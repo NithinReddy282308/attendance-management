@@ -4,9 +4,15 @@ A full-stack Employee Attendance Management System built with the MERN stack (Mo
 
 ## 📋 Project Information
 
+<<<<<<< HEAD
 - **Name:** [Sreeja Alle]
 - **College:** [Vignan's lara institute of technology and science]
 - **Contact:** [+91 7288 848 108]
+=======
+- **Name:** Alle Sreeja
+- **College:** Vignan's Lara Institute of Technology and Science.
+- **Contact:** 7288848108
+>>>>>>> d1a4e26c5a3e98b2059f8a4b2992a9f0d39981f7
 - **Project:** SDE Internship Task - Tap Academy
 
 ---
@@ -312,4 +318,4 @@ This project is created for educational purposes as part of the SDE Internship t
 
 ---
 
-**Good luck with the evaluation! 🎉**
+
