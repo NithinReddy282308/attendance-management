@@ -4,9 +4,9 @@ A full-stack Employee Attendance Management System built with the MERN stack (Mo
 
 ## 📋 Project Information
 
-- **Name:** [Your Name]
-- **College:** [Your College Name]
-- **Contact:** [Your Contact Number]
+- **Name:** [Sreeja Alle]
+- **College:** [Vignan's lara institute of technology and science]
+- **Contact:** [+91 7288 848 108]
 - **Project:** SDE Internship Task - Tap Academy
 
 ---
@@ -237,7 +237,7 @@ After running the seed script, you can use these credentials:
 ## 📸 Screenshots
 
 ### Login Page
-![Login Page](screenshots/login.png)
+![Login Page](screenshcdots/login.png)
 
 ### Employee Dashboard
 ![Employee Dashboard](screenshots/employee-dashboard.png)

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiUser, FiMail, FiBriefcase, FiHash, FiPhone, FiEdit2, FiSave } from 'react-icons/fi';
-import Layout from '../../components/layout/Layout';
-import useAuthStore from '../../redux/authStore';
+import Layout from '../components/layout/Layout';
+import useAuthStore from '../redux/authStore';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
