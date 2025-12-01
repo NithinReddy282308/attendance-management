@@ -17,25 +17,34 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color = 'blue', trend })
     orange: 'bg-orange-500/10',
   };
 
+  const iconColors = {
+    blue: '#3b82f6',
+    green: '#10b981',
+    yellow: '#f59e0b',
+    red: '#ef4444',
+    purple: '#a855f7',
+    orange: '#f97316',
+  };
+
   return (
-    <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 card-hover">
+    <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-slate-700/50 card-hover">
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-slate-400 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-white mt-2">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-slate-400 text-xs sm:text-sm font-medium truncate">{title}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-white mt-1 sm:mt-2">{value}</p>
           {subtitle && (
-            <p className="text-slate-500 text-sm mt-1">{subtitle}</p>
+            <p className="text-slate-500 text-xs sm:text-sm mt-1 truncate">{subtitle}</p>
           )}
           {trend && (
-            <div className={`flex items-center gap-1 mt-2 text-sm ${trend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`flex items-center gap-1 mt-2 text-xs sm:text-sm ${trend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               <span>{trend > 0 ? '↑' : '↓'}</span>
-              <span>{Math.abs(trend)}% from last month</span>
+              <span>{Math.abs(trend)}%</span>
             </div>
           )}
         </div>
         {Icon && (
-          <div className={`p-3 rounded-xl ${bgClasses[color]}`}>
-            <Icon className={`w-6 h-6 bg-gradient-to-r ${colorClasses[color]} bg-clip-text text-transparent`} style={{ color: color === 'blue' ? '#3b82f6' : color === 'green' ? '#10b981' : color === 'yellow' ? '#f59e0b' : color === 'red' ? '#ef4444' : color === 'purple' ? '#a855f7' : '#f97316' }} />
+          <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${bgClasses[color]} flex-shrink-0 ml-2`}>
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: iconColors[color] }} />
           </div>
         )}
       </div>

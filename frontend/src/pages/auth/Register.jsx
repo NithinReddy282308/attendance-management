@@ -13,6 +13,12 @@ const Register = () => {
     department: ''
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState({
+    name: false,
+    email: false,
+    password: false,
+    confirmPassword: false
+  });
   const { register, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
@@ -20,6 +26,14 @@ const Register = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFocus = (field) => {
+    setFocused({ ...focused, [field]: true });
+  };
+
+  const handleBlur = (field) => {
+    setFocused({ ...focused, [field]: false });
   };
 
   const handleSubmit = async (e) => {
@@ -56,74 +70,81 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4 safe-area-top safe-area-bottom">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-60 sm:w-80 h-60 sm:h-80 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-60 sm:w-80 h-60 sm:h-80 bg-purple-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-4">
-            <FiClock className="w-8 h-8 text-white" />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl gradient-primary mb-3 sm:mb-4">
+            <FiClock className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
           </div>
-          <h1 className="font-display text-3xl font-bold text-white">AttendEase</h1>
-          <p className="text-slate-400 mt-2">Employee Attendance System</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white">AttendEase</h1>
+          <p className="text-slate-400 mt-1 sm:mt-2 text-sm sm:text-base">Employee Attendance System</p>
         </div>
 
         {/* Register Form */}
-        <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-xl">
-          <h2 className="text-2xl font-display font-semibold text-white mb-2">Create Account</h2>
-          <p className="text-slate-400 mb-6">Register as an employee</p>
+        <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-5 sm:p-8 border border-slate-700/50 shadow-xl">
+          <h2 className="text-xl sm:text-2xl font-display font-semibold text-white mb-1 sm:mb-2">Create Account</h2>
+          <p className="text-slate-400 mb-5 sm:mb-6 text-sm sm:text-base">Register as an employee</p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
                 Full Name
               </label>
               <div className="relative">
-                <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <FiUser className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="input pl-12"
-                  placeholder="John Doe"
+                  onFocus={() => handleFocus('name')}
+                  onBlur={() => handleBlur('name')}
+                  className="input pl-10 sm:pl-12"
+                  placeholder={!focused.name && !formData.name ? 'John Doe' : ''}
                 />
               </div>
             </div>
 
+            {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <FiMail className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="input pl-12"
-                  placeholder="you@company.com"
+                  onFocus={() => handleFocus('email')}
+                  onBlur={() => handleBlur('email')}
+                  className="input pl-10 sm:pl-12"
+                  placeholder={!focused.email && !formData.email ? 'you@company.com' : ''}
                 />
               </div>
             </div>
 
+            {/* Department Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
                 Department
               </label>
               <div className="relative">
-                <FiBriefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <FiBriefcase className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <select
                   name="department"
                   value={formData.department}
                   onChange={handleChange}
-                  className="input pl-12 appearance-none cursor-pointer"
+                  className="input pl-10 sm:pl-12 appearance-none cursor-pointer"
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
@@ -133,43 +154,49 @@ const Register = () => {
               </div>
             </div>
 
+            {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
                 Password
               </label>
               <div className="relative">
-                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <FiLock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="input pl-12 pr-12"
-                  placeholder="••••••••"
+                  onFocus={() => handleFocus('password')}
+                  onBlur={() => handleBlur('password')}
+                  className="input pl-10 sm:pl-12 pr-10 sm:pr-12"
+                  placeholder={!focused.password && !formData.password ? '••••••••' : ''}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
                 >
-                  {showPassword ? <FiEyeOff /> : <FiEye />}
+                  {showPassword ? <FiEyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <FiEye className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
               </div>
             </div>
 
+            {/* Confirm Password Field */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5 sm:mb-2">
                 Confirm Password
               </label>
               <div className="relative">
-                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
+                <FiLock className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="input pl-12"
-                  placeholder="••••••••"
+                  onFocus={() => handleFocus('confirmPassword')}
+                  onBlur={() => handleBlur('confirmPassword')}
+                  className="input pl-10 sm:pl-12"
+                  placeholder={!focused.confirmPassword && !formData.confirmPassword ? '••••••••' : ''}
                 />
               </div>
             </div>
@@ -177,14 +204,14 @@ const Register = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl font-semibold text-white gradient-primary hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              className="w-full py-2.5 sm:py-3 rounded-xl font-semibold text-white gradient-primary hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed mt-2 text-sm sm:text-base"
             >
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-400">
+          <div className="mt-5 sm:mt-6 text-center">
+            <p className="text-slate-400 text-sm">
               Already have an account?{' '}
               <Link to="/login" className="text-blue-400 hover:text-blue-300 font-medium">
                 Sign in

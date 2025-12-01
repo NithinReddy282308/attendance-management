@@ -19,6 +19,23 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px;
+}
+
+/* Responsive font sizes */
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1536px) {
+  html {
+    font-size: 18px;
+  }
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -26,12 +43,20 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
+}
+
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -109,9 +134,21 @@ body {
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
 }
 
+@media (max-width: 768px) {
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
 /* Button styles */
 .btn {
-  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  @apply px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm;
+}
+
+@media (min-width: 768px) {
+  .btn {
+    @apply px-4 py-2 text-base;
+  }
 }
 
 .btn-primary {
@@ -132,12 +169,24 @@ body {
 
 /* Input styles */
 .input {
-  @apply w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  @apply w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm;
+}
+
+@media (min-width: 768px) {
+  .input {
+    @apply px-4 py-3 text-base;
+  }
 }
 
 /* Status badges */
 .badge {
-  @apply px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide;
+  @apply px-2 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide;
+}
+
+@media (min-width: 768px) {
+  .badge {
+    @apply px-3 py-1;
+  }
 }
 
 .badge-present {
@@ -154,4 +203,33 @@ body {
 
 .badge-half-day {
   @apply bg-orange-500/20 text-orange-400;
+}
+
+/* Responsive table container */
+.table-container {
+  @apply w-full overflow-x-auto -mx-4 px-4;
+}
+
+@media (min-width: 768px) {
+  .table-container {
+    @apply mx-0 px-0;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button, a, input, select {
+    min-height: 44px;
+  }
+}
+
+/* Safe area for notched devices */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
 }
