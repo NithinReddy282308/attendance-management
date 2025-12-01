@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FiHome, FiClock, FiCalendar, FiUser, FiUsers, FiFileText, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { FiHome, FiClock, FiCalendar, FiUser, FiUsers, FiFileText, FiLogOut, FiMenu, FiX, FiMonitor } from 'react-icons/fi';
 import useAuthStore from '../../redux/authStore';
 import { useState } from 'react';
 
@@ -25,6 +25,7 @@ const Sidebar = () => {
     { to: '/manager/attendance', icon: FiUsers, label: 'All Attendance' },
     { to: '/manager/calendar', icon: FiCalendar, label: 'Team Calendar' },
     { to: '/manager/reports', icon: FiFileText, label: 'Reports' },
+    { to: '/manager/login-monitoring', icon: FiMonitor, label: 'Login Monitoring' },
     { to: '/profile', icon: FiUser, label: 'Profile' },
   ];
 

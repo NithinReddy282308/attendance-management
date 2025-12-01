@@ -1,126 +1,121 @@
-const Attendance = require('../models/Attendance');
 const User = require('../models/User');
-const { Parser } = require('json2csv');
+const LoginHistory = require('../models/LoginHistory');
 
-// Helper to get start and end of day
-const getDateBounds = (date) => {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(date);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-};
-
-// @desc    Check in
-// @route   POST /api/attendance/checkin
-// @access  Private (Employee)
-exports.checkIn = async (req, res) => {
+// @desc    Register user
+// @route   POST /api/auth/register
+// @access  Public
+exports.register = async (req, res) => {
   try {
-    const today = new Date();
-    const { start, end } = getDateBounds(today);
+    const { name, email, password, department, role } = req.body;
 
-    // Check if already checked in today
-    let attendance = await Attendance.findOne({
-      userId: req.user.id,
-      date: { $gte: start, $lte: end }
-    });
-
-    if (attendance && attendance.checkInTime) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: 'Already checked in today'
+        message: 'Email already registered'
       });
     }
 
-    if (!attendance) {
-      attendance = new Attendance({
-        userId: req.user.id,
-        date: start,
-        checkInTime: new Date()
-      });
-    } else {
-      attendance.checkInTime = new Date();
-    }
+    const employeeId = await User.generateEmployeeId();
 
-    attendance.determineStatus();
-    await attendance.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Checked in successfully',
-      data: attendance
+    const user = await User.create({
+      name,
+      email,
+      password,
+      department,
+      role: role || 'employee',
+      employeeId
     });
+
+    sendTokenResponse(user, 201, res);
   } catch (error) {
-    console.error('Check in error:', error);
+    console.error('Register error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Server error during registration',
       error: error.message
     });
   }
 };
 
-// @desc    Check out
-// @route   POST /api/attendance/checkout
-// @access  Private (Employee)
-exports.checkOut = async (req, res) => {
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
+exports.login = async (req, res) => {
   try {
-    const today = new Date();
-    const { start, end } = getDateBounds(today);
+    const { email, password } = req.body;
 
-    const attendance = await Attendance.findOne({
-      userId: req.user.id,
-      date: { $gte: start, $lte: end }
-    });
+    // Get IP and User Agent
+    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip || 'Unknown';
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+    const browser = getBrowser(userAgent);
+    const device = getDevice(userAgent);
 
-    if (!attendance || !attendance.checkInTime) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please check in first'
+        message: 'Please provide an email and password'
       });
     }
 
-    if (attendance.checkOutTime) {
-      return res.status(400).json({
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
         success: false,
-        message: 'Already checked out today'
+        message: 'Invalid credentials'
       });
     }
 
-    attendance.checkOutTime = new Date();
-    await attendance.save();
+    const isMatch = await user.matchPassword(password);
 
-    res.status(200).json({
-      success: true,
-      message: 'Checked out successfully',
-      data: attendance
+    if (!isMatch) {
+      // Log failed attempt
+      await LoginHistory.create({
+        userId: user._id,
+        ipAddress,
+        userAgent,
+        browser,
+        device,
+        status: 'failed'
+      });
+
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Log successful login
+    await LoginHistory.create({
+      userId: user._id,
+      ipAddress,
+      userAgent,
+      browser,
+      device,
+      status: 'success'
     });
+
+    sendTokenResponse(user, 200, res);
   } catch (error) {
-    console.error('Check out error:', error);
+    console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error',
+      message: 'Server error during login',
       error: error.message
     });
   }
 };
 
-// @desc    Get today's status
-// @route   GET /api/attendance/today
-// @access  Private (Employee)
-exports.getTodayStatus = async (req, res) => {
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+exports.getMe = async (req, res) => {
   try {
-    const today = new Date();
-    const { start, end } = getDateBounds(today);
-
-    const attendance = await Attendance.findOne({
-      userId: req.user.id,
-      date: { $gte: start, $lte: end }
-    });
-
+    const user = await User.findById(req.user.id);
     res.status(200).json({
       success: true,
-      data: attendance || { status: 'not-checked-in' }
+      data: user
     });
   } catch (error) {
     res.status(500).json({
@@ -131,29 +126,22 @@ exports.getTodayStatus = async (req, res) => {
   }
 };
 
-// @desc    Get my attendance history
-// @route   GET /api/attendance/my-history
-// @access  Private (Employee)
-exports.getMyHistory = async (req, res) => {
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
   try {
-    const { month, year } = req.query;
+    const { name, phone, avatar } = req.body;
     
-    let query = { userId: req.user.id };
-    
-    if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-      query.date = { $gte: startDate, $lte: endDate };
-    }
-
-    const attendance = await Attendance.find(query)
-      .sort({ date: -1 })
-      .limit(100);
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name, phone, avatar },
+      { new: true, runValidators: true }
+    );
 
     res.status(200).json({
       success: true,
-      count: attendance.length,
-      data: attendance
+      data: user
     });
   } catch (error) {
     res.status(500).json({
@@ -164,134 +152,39 @@ exports.getMyHistory = async (req, res) => {
   }
 };
 
-// @desc    Get my monthly summary
-// @route   GET /api/attendance/my-summary
-// @access  Private (Employee)
-exports.getMySummary = async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    const currentDate = new Date();
-    const targetMonth = month ? parseInt(month) - 1 : currentDate.getMonth();
-    const targetYear = year ? parseInt(year) : currentDate.getFullYear();
-
-    const startDate = new Date(targetYear, targetMonth, 1);
-    const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
-
-    const attendance = await Attendance.find({
-      userId: req.user.id,
-      date: { $gte: startDate, $lte: endDate }
-    });
-
-    const summary = {
-      totalDays: attendance.length,
-      present: attendance.filter(a => a.status === 'present').length,
-      absent: attendance.filter(a => a.status === 'absent').length,
-      late: attendance.filter(a => a.status === 'late').length,
-      halfDay: attendance.filter(a => a.status === 'half-day').length,
-      totalHours: attendance.reduce((sum, a) => sum + (a.totalHours || 0), 0).toFixed(2),
-      month: targetMonth + 1,
-      year: targetYear
-    };
-
-    res.status(200).json({
-      success: true,
-      data: summary
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-// ============ MANAGER ENDPOINTS ============
-
-// @desc    Get all employees attendance
-// @route   GET /api/attendance/all
+// @desc    Get all login history (Manager only)
+// @route   GET /api/auth/login-history
 // @access  Private (Manager)
-exports.getAllAttendance = async (req, res) => {
+exports.getLoginHistory = async (req, res) => {
   try {
-    const { date, status, employeeId, department, page = 1, limit = 20 } = req.query;
+    const { userId, status, limit = 100 } = req.query;
     
     let query = {};
-    
-    if (date) {
-      const { start, end } = getDateBounds(new Date(date));
-      query.date = { $gte: start, $lte: end };
-    }
-    
-    if (status) {
-      query.status = status;
-    }
+    if (userId) query.userId = userId;
+    if (status) query.status = status;
 
-    // Get all attendance records with user details
-    let attendanceQuery = Attendance.find(query)
+    const history = await LoginHistory.find(query)
       .populate('userId', 'name email employeeId department')
-      .sort({ date: -1 });
+      .sort({ loginTime: -1 })
+      .limit(parseInt(limit));
 
-    // Apply pagination
-    const skip = (page - 1) * limit;
-    attendanceQuery = attendanceQuery.skip(skip).limit(parseInt(limit));
-
-    const attendance = await attendanceQuery;
-    const total = await Attendance.countDocuments(query);
-
-    // Filter by employee ID or department if needed (after populate)
-    let filteredAttendance = attendance;
-    if (employeeId) {
-      filteredAttendance = attendance.filter(a => 
-        a.userId && a.userId.employeeId === employeeId
-      );
-    }
-    if (department) {
-      filteredAttendance = filteredAttendance.filter(a => 
-        a.userId && a.userId.department === department
-      );
-    }
+    // Get stats
+    const totalLogins = await LoginHistory.countDocuments({ status: 'success' });
+    const failedLogins = await LoginHistory.countDocuments({ status: 'failed' });
+    const todayLogins = await LoginHistory.countDocuments({
+      status: 'success',
+      loginTime: { $gte: new Date().setHours(0, 0, 0, 0) }
+    });
 
     res.status(200).json({
       success: true,
-      count: filteredAttendance.length,
-      total,
-      page: parseInt(page),
-      pages: Math.ceil(total / limit),
-      data: filteredAttendance
-    });
-  } catch (error) {
-    console.error('Get all attendance error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
-};
-
-// @desc    Get specific employee attendance
-// @route   GET /api/attendance/employee/:id
-// @access  Private (Manager)
-exports.getEmployeeAttendance = async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    
-    let query = { userId: req.params.id };
-    
-    if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-      query.date = { $gte: startDate, $lte: endDate };
-    }
-
-    const attendance = await Attendance.find(query)
-      .populate('userId', 'name email employeeId department')
-      .sort({ date: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: attendance.length,
-      data: attendance
+      count: history.length,
+      stats: {
+        totalLogins,
+        failedLogins,
+        todayLogins
+      },
+      data: history
     });
   } catch (error) {
     res.status(500).json({
@@ -302,175 +195,42 @@ exports.getEmployeeAttendance = async (req, res) => {
   }
 };
 
-// @desc    Get team summary
-// @route   GET /api/attendance/summary
-// @access  Private (Manager)
-exports.getTeamSummary = async (req, res) => {
-  try {
-    const { month, year, department } = req.query;
-    const currentDate = new Date();
-    const targetMonth = month ? parseInt(month) - 1 : currentDate.getMonth();
-    const targetYear = year ? parseInt(year) : currentDate.getFullYear();
+// Helper function to get token and send response
+const sendTokenResponse = (user, statusCode, res) => {
+  const token = user.getSignedJwtToken();
 
-    const startDate = new Date(targetYear, targetMonth, 1);
-    const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
-
-    // Get all employees
-    let userQuery = { role: 'employee' };
-    if (department) {
-      userQuery.department = department;
+  res.status(statusCode).json({
+    success: true,
+    token,
+    data: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      employeeId: user.employeeId,
+      department: user.department
     }
-    const employees = await User.find(userQuery);
-
-    // Get attendance for the month
-    const attendance = await Attendance.find({
-      date: { $gte: startDate, $lte: endDate }
-    }).populate('userId', 'name email employeeId department');
-
-    // Calculate summary
-    const summary = {
-      totalEmployees: employees.length,
-      totalPresent: attendance.filter(a => a.status === 'present').length,
-      totalAbsent: attendance.filter(a => a.status === 'absent').length,
-      totalLate: attendance.filter(a => a.status === 'late').length,
-      totalHalfDay: attendance.filter(a => a.status === 'half-day').length,
-      averageHours: (attendance.reduce((sum, a) => sum + (a.totalHours || 0), 0) / (attendance.length || 1)).toFixed(2),
-      month: targetMonth + 1,
-      year: targetYear
-    };
-
-    // Department-wise breakdown
-    const departments = ['Engineering', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations'];
-    const departmentSummary = departments.map(dept => {
-      const deptAttendance = attendance.filter(a => a.userId && a.userId.department === dept);
-      return {
-        department: dept,
-        present: deptAttendance.filter(a => a.status === 'present').length,
-        absent: deptAttendance.filter(a => a.status === 'absent').length,
-        late: deptAttendance.filter(a => a.status === 'late').length
-      };
-    });
-
-    res.status(200).json({
-      success: true,
-      data: {
-        ...summary,
-        departmentSummary
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
+  });
 };
 
-// @desc    Get today's status for all employees
-// @route   GET /api/attendance/today-status
-// @access  Private (Manager)
-exports.getTodayStatusAll = async (req, res) => {
-  try {
-    const today = new Date();
-    const { start, end } = getDateBounds(today);
-
-    const employees = await User.find({ role: 'employee' });
-    const attendance = await Attendance.find({
-      date: { $gte: start, $lte: end }
-    }).populate('userId', 'name email employeeId department');
-
-    const checkedInIds = attendance.map(a => a.userId?._id?.toString());
-    
-    const present = attendance.filter(a => a.checkInTime);
-    const absent = employees.filter(e => !checkedInIds.includes(e._id.toString()));
-    const late = attendance.filter(a => a.status === 'late');
-
-    res.status(200).json({
-      success: true,
-      data: {
-        totalEmployees: employees.length,
-        presentCount: present.length,
-        absentCount: absent.length,
-        lateCount: late.length,
-        presentEmployees: present,
-        absentEmployees: absent.map(e => ({
-          _id: e._id,
-          name: e.name,
-          email: e.email,
-          employeeId: e.employeeId,
-          department: e.department
-        })),
-        lateEmployees: late
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
+// Helper function to parse browser
+const getBrowser = (userAgent) => {
+  if (userAgent.includes('Chrome') && !userAgent.includes('Edge')) return 'Chrome';
+  if (userAgent.includes('Firefox')) return 'Firefox';
+  if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+  if (userAgent.includes('Edge')) return 'Edge';
+  if (userAgent.includes('Opera')) return 'Opera';
+  return 'Unknown';
 };
 
-// @desc    Export attendance to CSV
-// @route   GET /api/attendance/export
-// @access  Private (Manager)
-exports.exportAttendance = async (req, res) => {
-  try {
-    const { startDate, endDate, employeeId, department } = req.query;
-
-    let query = {};
-    
-    if (startDate && endDate) {
-      query.date = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      };
-    }
-
-    const attendance = await Attendance.find(query)
-      .populate('userId', 'name email employeeId department')
-      .sort({ date: -1 });
-
-    // Filter by employee or department
-    let filteredAttendance = attendance;
-    if (employeeId) {
-      filteredAttendance = attendance.filter(a => 
-        a.userId && a.userId.employeeId === employeeId
-      );
-    }
-    if (department) {
-      filteredAttendance = filteredAttendance.filter(a => 
-        a.userId && a.userId.department === department
-      );
-    }
-
-    // Transform data for CSV
-    const csvData = filteredAttendance.map(a => ({
-      'Employee ID': a.userId?.employeeId || 'N/A',
-      'Name': a.userId?.name || 'N/A',
-      'Department': a.userId?.department || 'N/A',
-      'Date': a.date.toISOString().split('T')[0],
-      'Check In': a.checkInTime ? new Date(a.checkInTime).toLocaleTimeString() : 'N/A',
-      'Check Out': a.checkOutTime ? new Date(a.checkOutTime).toLocaleTimeString() : 'N/A',
-      'Status': a.status,
-      'Total Hours': a.totalHours || 0
-    }));
-
-    const fields = ['Employee ID', 'Name', 'Department', 'Date', 'Check In', 'Check Out', 'Status', 'Total Hours'];
-    const parser = new Parser({ fields });
-    const csv = parser.parse(csvData);
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename=attendance-report-${new Date().toISOString().split('T')[0]}.csv`);
-    res.status(200).send(csv);
-  } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message
-    });
-  }
+// Helper function to parse device
+const getDevice = (userAgent) => {
+  if (userAgent.includes('iPhone')) return 'iPhone';
+  if (userAgent.includes('Android') && userAgent.includes('Mobile')) return 'Android Phone';
+  if (userAgent.includes('Android')) return 'Android Tablet';
+  if (userAgent.includes('iPad')) return 'iPad';
+  if (userAgent.includes('Windows')) return 'Windows PC';
+  if (userAgent.includes('Mac')) return 'Mac';
+  if (userAgent.includes('Linux')) return 'Linux';
+  return 'Unknown';
 };

@@ -16,6 +16,7 @@ import ManagerDashboard from './pages/manager/Dashboard';
 import AllAttendance from './pages/manager/AllAttendance';
 import TeamCalendar from './pages/manager/TeamCalendar';
 import Reports from './pages/manager/Reports';
+import LoginMonitoring from './pages/manager/LoginMonitoring';
 
 // Shared Pages
 import Profile from './pages/Profile';
@@ -148,6 +149,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['manager']}>
               <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/manager/login-monitoring" 
+          element={
+            <ProtectedRoute allowedRoles={['manager']}>
+              <LoginMonitoring />
             </ProtectedRoute>
           } 
         />
