@@ -2,6 +2,15 @@
 
 A full-stack Employee Attendance Management System built with the MERN stack (MongoDB, Express.js, React, Node.js).
 
+## 🌐 Live Demo
+
+https://attendacemanagementsys.vercel.app/
+
+## 📋 Project Information
+
+- **Name:**  Vanga NithinReddy
+
+---
 
 ## 🚀 Features
 
@@ -28,12 +37,11 @@ A full-stack Employee Attendance Management System built with the MERN stack (Mo
 
 ### Frontend
 - **React 18** - UI Library
-- **Zustand** - State Management (lightweight alternative to Redux)
+- **Zustand** - State Management
 - **React Router v6** - Navigation
 - **Tailwind CSS** - Styling
 - **Recharts** - Charts & Visualizations
 - **React Hot Toast** - Notifications
-- **date-fns** - Date formatting
 - **Axios** - HTTP Client
 
 ### Backend
@@ -43,7 +51,18 @@ A full-stack Employee Attendance Management System built with the MERN stack (Mo
 - **Mongoose** - ODM
 - **JWT** - Authentication
 - **bcryptjs** - Password Hashing
-- **json2csv** - CSV Export
+
+---
+
+## 🔐 Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| **Manager** | manager@company.com | password123 |
+| **Employee** | alice@company.com | password123 |
+| **Employee** | bob@company.com | password123 |
+
+> ⚠️ **Note:** First login may take 30-60 seconds as the free server wakes up.
 
 ---
 
@@ -67,6 +86,7 @@ employee-attendance-system/
 │   │   ├── authRoutes.js
 │   │   ├── attendanceRoutes.js
 │   │   └── dashboardRoutes.js
+│   ├── .env.example
 │   ├── package.json
 │   ├── seed.js
 │   └── server.js
@@ -74,17 +94,14 @@ employee-attendance-system/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── common/
-│   │   │   └── layout/
 │   │   ├── pages/
-│   │   │   ├── auth/
-│   │   │   ├── employee/
-│   │   │   └── manager/
 │   │   ├── redux/
 │   │   ├── utils/
 │   │   ├── App.jsx
 │   │   └── main.jsx
+│   ├── .env.example
 │   ├── package.json
+│   ├── vercel.json
 │   └── vite.config.js
 │
 └── README.md
@@ -96,94 +113,47 @@ employee-attendance-system/
 
 ### Backend (.env)
 ```env
-MONGODB_URI=mongodb+srv://your-username:your-password@cluster.mongodb.net/attendance-system
-JWT_SECRET=your-super-secret-jwt-key-change-this
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/attendance-system
+JWT_SECRET=your-secret-key
 JWT_EXPIRE=7d
-PORT=5001
+PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
 ```
 
 ### Frontend (.env)
 ```env
-VITE_API_URL=http://localhost:5001/api
+VITE_API_URL=http://localhost:5000/api
 ```
 
 ---
 
-## 🚀 How to Run
+## 🚀 Local Development Setup
 
 ### Prerequisites
 - Node.js (v18 or higher)
-- MongoDB Atlas account or local MongoDB installation
+- MongoDB Atlas account
 - npm or yarn
 
 ### Backend Setup
 
-1. Navigate to backend directory:
 ```bash
 cd backend
-```
-
-2. Install dependencies:
-```bash
 npm install
+cp .env .exampleenv
+# Update .env with your MongoDB URI
+npm run seed    # Add sample data
+npm run dev     # Start server on port 5000
 ```
-
-3. Create `.env` file from example:
-```bash
-cp .env exampleenv
-```
-
-4. Update `.env` with your MongoDB URI and JWT secret
-
-5. Seed the database with sample data:
-```bash
-npm run seed
-```
-
-6. Start the server:
-```bash
-npm run dev
-```
-
-Server will run on `http://localhost:5000`
 
 ### Frontend Setup
 
-1. Navigate to frontend directory:
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
+cp .env .exampleenv
+npm run dev     # Start on port 5173
 ```
-
-3. Create `.env` file from example:
-```bash
-cp .env.example .env
-```
-
-4. Start the development server:
-```bash
-npm run dev
-```
-
-Application will run on `http://localhost:5173`
-
----
-
-## 🔐 Test Credentials
-
-After running the seed script, you can use these credentials:
-
-| Role | Email | Password |
-|------|-------|----------|
-| Manager | manager@company.com | password123 |
-| Employee | alice@company.com | password123 |
-| Employee | bob@company.com | password123 |
 
 ---
 
@@ -224,45 +194,13 @@ After running the seed script, you can use these credentials:
 
 ---
 
-## 📸 Screenshots
-
-### Login Page
-![Login Page](screenshcdots/login.png)
-
-### Employee Dashboard
-![Employee Dashboard](screenshots/employee-dashboard.png)
-
-### Mark Attendance
-![Mark Attendance](screenshots/mark-attendance.png)
-
-### Attendance History
-![Attendance History](screenshots/attendance-history.png)
-
-### Manager Dashboard
-![Manager Dashboard](screenshots/manager-dashboard.png)
-
-### All Employees Attendance
-![All Attendance](screenshots/all-attendance.png)
-
-### Team Calendar
-![Team Calendar](screenshots/team-calendar.png)
-
-### Reports & Export
-![Reports](screenshots/reports.png)
-
----
-
 ## 🎯 Key Features Explained
 
 ### Attendance Status Logic
-- **Present**: Check-in within 15 minutes of standard time (9:00 AM)
+- **Present**: Check-in within 15 minutes of 9:00 AM
 - **Late**: Check-in between 15 minutes to 2 hours late
 - **Half-Day**: Check-in more than 2 hours late
 - **Absent**: No check-in recorded
-
-### Role-Based Access
-- **Employees** can only access their own data
-- **Managers** have access to all employee data and reports
 
 ### Calendar Color Coding
 - 🟢 Green - Present
@@ -274,32 +212,33 @@ After running the seed script, you can use these credentials:
 
 ## 🔧 Deployment
 
-### Backend (Render/Railway)
-1. Create a new Web Service
-2. Connect your GitHub repository
-3. Set environment variables
-4. Deploy
-
-### Frontend (Vercel/Netlify)
-1. Import your repository
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
+### Backend - Render
+1. Create Web Service on Render
+2. Connect GitHub repository
+3. Set root directory: `backend`
 4. Add environment variables
 5. Deploy
+
+### Frontend - Vercel
+1. Import project on Vercel
+2. Set root directory: `frontend`
+3. Add environment variable: `VITE_API_URL`
+4. Deploy
 
 ---
 
 ## 📝 License
 
-This project is created for educational purposes as part of the SDE Internship task.
+This project is created for educational purposes.
 
 ---
 
 ## 🙏 Acknowledgments
 
-- Tap Academy for providing this opportunity
 - All open-source libraries used in this project
+- MongoDB Atlas for free database hosting
+- Render & Vercel for free hosting
 
 ---
 
-
+**Made with ❤️ using MERN Stack**
