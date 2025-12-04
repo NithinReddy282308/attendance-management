@@ -1,6 +1,83 @@
 const User = require('../models/User');
 const LoginHistory = require('../models/LoginHistory');
 
+/**
+ * Helper: normalize IPv4/IPv6, drop ::ffff: prefix
+ */
+function normalizeIp(ip = '') {
+  if (!ip) return '';
+  // remove IPv6 prefix for IPv4 mapped addresses
+  return ip.replace(/^::ffff:/i, '').trim();
+}
+
+/**
+ * Helper: detect private/internal IPv4 ranges and simple IPv6 checks
+ */
+function isPrivateIp(ip = '') {
+  if (!ip) return true;
+  const n = normalizeIp(ip);
+
+  // IPv6 local/loopback checks:
+  if (n === '::1' || n.startsWith('fe80') || n.startsWith('fc') || n.startsWith('fd')) {
+    return true;
+  }
+
+  const parts = n.split('.');
+  if (parts.length === 4) {
+    const [a, b] = parts.map(Number);
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Helper: Get best client IP from request (best-effort)
+ * - checks x-forwarded-for (left-most public IP)
+ * - checks cf-connecting-ip, x-real-ip
+ * - falls back to req.ip and socket.remoteAddress
+ */
+function getClientIp(req) {
+  // Prefer Cloudflare connecting IP when present (but still validate)
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (cfIp && !isPrivateIp(cfIp)) return normalizeIp(cfIp);
+
+  // X-Forwarded-For may be a comma separated list of IPs
+  const xffRaw = req.headers['x-forwarded-for'] || req.headers['x-forwarded'] || req.headers['forwarded-for'] || req.headers['forwarded'];
+  if (xffRaw) {
+    const parts = String(xffRaw).split(',').map(s => s.trim()).filter(Boolean);
+    // left-most entry is original client — pick the first public IP if available
+    for (const p of parts) {
+      if (!isPrivateIp(p)) return normalizeIp(p);
+    }
+    // fallback to first if all are private/internal
+    if (parts.length > 0) return normalizeIp(parts[0]);
+  }
+
+  // x-real-ip common header
+  const xr = req.headers['x-real-ip'];
+  if (xr && !isPrivateIp(xr)) return normalizeIp(xr);
+
+  // Express's req.ip (works well when app.set('trust proxy', true) is configured)
+  if (req.ip) {
+    const cleaned = normalizeIp(req.ip);
+    if (!isPrivateIp(cleaned)) return cleaned;
+    // still return it as fallback
+    return cleaned;
+  }
+
+  // Last resort: socket remote address
+  const remote = req.socket && (req.socket.remoteAddress || req.connection?.remoteAddress);
+  return normalizeIp(remote || '');
+}
+
+/* =========================
+   Controller methods
+   ========================= */
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -48,10 +125,10 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Get IP and User Agent
-    const ipAddress = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip || 'Unknown';
+    // Get IP and User Agent using helper
+    const ipAddress = getClientIp(req) || 'Unknown';
     const userAgent = req.headers['user-agent'] || 'Unknown';
-    
+
     // Parse browser and device from user agent
     const browser = getBrowser(userAgent);
     const device = getDevice(userAgent);
@@ -150,7 +227,7 @@ exports.getMe = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { name, phone, avatar } = req.body;
-    
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { name, phone, avatar },
@@ -176,7 +253,7 @@ exports.updateProfile = async (req, res) => {
 exports.getLoginHistory = async (req, res) => {
   try {
     const { userId, status, limit = 50 } = req.query;
-    
+
     let query = {};
     if (userId) query.userId = userId;
     if (status) query.status = status;
@@ -241,22 +318,27 @@ const sendTokenResponse = (user, statusCode, res) => {
   });
 };
 
-// Helper function to parse browser from user agent
-const getBrowser = (userAgent) => {
-  if (userAgent.includes('Chrome')) return 'Chrome';
-  if (userAgent.includes('Firefox')) return 'Firefox';
-  if (userAgent.includes('Safari')) return 'Safari';
-  if (userAgent.includes('Edge')) return 'Edge';
-  if (userAgent.includes('Opera')) return 'Opera';
+// Helper function to parse browser from user agent (case-insensitive)
+const getBrowser = (userAgent = '') => {
+  const ua = String(userAgent).toLowerCase();
+  if (ua.includes('edge')) return 'Edge';
+  if (ua.includes('opr') || ua.includes('opera')) return 'Opera';
+  if (ua.includes('chrome') && !ua.includes('edge') && !ua.includes('opr')) return 'Chrome';
+  if (ua.includes('firefox')) return 'Firefox';
+  if (ua.includes('safari') && !ua.includes('chrome')) return 'Safari';
   return 'Unknown';
 };
 
-// Helper function to parse device from user agent
-const getDevice = (userAgent) => {
-  if (userAgent.includes('Mobile')) return 'Mobile';
-  if (userAgent.includes('Tablet')) return 'Tablet';
-  if (userAgent.includes('Windows')) return 'Windows PC';
-  if (userAgent.includes('Mac')) return 'Mac';
-  if (userAgent.includes('Linux')) return 'Linux';
+// Helper function to parse device from user agent (case-insensitive)
+const getDevice = (userAgent = '') => {
+  const ua = String(userAgent).toLowerCase();
+  if (ua.includes('iphone')) return 'iPhone';
+  if (ua.includes('ipad')) return 'iPad';
+  if (ua.includes('android')) return 'Android';
+  if (ua.includes('mobile')) return 'Mobile';
+  if (ua.includes('tablet')) return 'Tablet';
+  if (ua.includes('windows')) return 'Windows PC';
+  if (ua.includes('mac')) return 'Mac';
+  if (ua.includes('linux')) return 'Linux';
   return 'Unknown';
 };
