@@ -155,109 +155,100 @@ const LoginMonitoring = () => {
         </div>
 
         {/* Table */}
-        <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-          <h3 className="font-semibold text-white mb-4">Login History ({loginHistory.length} records)</h3>
+        {/* Table */}
+<div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+  <h3 className="font-semibold text-white mb-4">Login History ({loginHistory.length} records)</h3>
 
-          <div className="overflow-x-auto">
-            {/* table-fixed + colgroup to enforce consistent column widths */}
-            <table className="w-full table-fixed">
-              <colgroup>
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "24%" }} />
-                <col style={{ width: "12%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "10%" }} />
-              </colgroup>
+  <div className="overflow-x-auto">
+    <table className="w-full table-auto min-w-[900px]">
+      <thead>
+        <tr className="text-left text-slate-400 text-sm">
+          <th className="pb-3 pr-4 pl-2 font-medium border-r border-slate-700/30">User</th>
+          <th className="pb-3 pr-4 font-medium border-r border-slate-700/30">IP Address</th>
+          <th className="pb-3 pr-4 font-medium border-r border-slate-700/30">Device</th>
+          <th className="pb-3 pr-4 font-medium border-r border-slate-700/30">Browser</th>
+          <th className="pb-3 pr-4 font-medium border-r border-slate-700/30">Login Time</th>
+          <th className="pb-3 pl-4 font-medium">Status</th>
+        </tr>
+      </thead>
 
-              <thead>
-                <tr className="text-left text-slate-400 text-sm border-b border-slate-700">
-                  <th className="pb-3 font-medium pl-2">User</th>
-                  <th className="pb-3 font-medium">IP Address</th>
-                  <th className="pb-3 font-medium">Device</th>
-                  <th className="pb-3 font-medium">Browser</th>
-                  <th className="pb-3 font-medium">Login Time</th>
-                  <th className="pb-3 font-medium">Status</th>
-                </tr>
-              </thead>
+      <tbody className="text-slate-300 divide-y divide-slate-700/40">
+        {loginHistory.length > 0 ? (
+          loginHistory.map((record, index) => (
+            <tr key={index} className="last:border-0">
+              {/* User */}
+              <td className="py-4 pl-2 pr-4 align-top">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold text-sm shrink-0">
+                    {record.userId?.name?.charAt(0) || "?"}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-white">{record.userId?.name || "Unknown"}</p>
+                    <p className="text-xs text-slate-500">{record.userId?.email || ""}</p>
+                  </div>
+                </div>
+              </td>
 
-              <tbody className="text-slate-300">
-                {loginHistory.length > 0 ? (
-                  loginHistory.map((record, index) => (
-                    <tr key={index} className="border-b border-slate-700/50 last:border-0">
-                      {/* User */}
-                      <td className="py-4 pl-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold text-sm shrink-0">
-                            {record.userId?.name?.charAt(0) || "?"}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-white truncate max-w-[220px]">{record.userId?.name || "Unknown"}</p>
-                            <p className="text-xs text-slate-500 truncate max-w-[220px]">{record.userId?.email || ""}</p>
-                          </div>
-                        </div>
-                      </td>
+              {/* IP Address: allow wrapping / full visibility */}
+              <td className="py-4 pr-4 align-top">
+                <div className="flex items-center gap-2">
+                  <FiGlobe className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span
+                    className="font-mono text-sm break-all"
+                    title={Array.isArray(record.ipAddress) ? record.ipAddress.join(', ') : record.ipAddress}
+                  >
+                    {Array.isArray(record.ipAddress) ? record.ipAddress.join(', ') : record.ipAddress}
+                  </span>
+                </div>
+              </td>
 
-                      {/* IP Address (truncate if too long, full on hover) */}
-                      <td className="py-4">
-                        <div className="flex items-center gap-2">
-                          <FiGlobe className="w-4 h-4 text-slate-500 shrink-0" />
-                          <span className="font-mono text-sm truncate max-w-[300px]" title={record.ipAddress}>
-                            {record.ipAddress}
-                          </span>
-                        </div>
-                      </td>
+              {/* Device */}
+              <td className="py-4 pr-4 align-top">
+                <div className="flex items-center gap-2">
+                  {getDeviceIcon(record.device)}
+                  <span className="text-sm text-slate-300 whitespace-nowrap" title={record.device}>
+                    {getDeviceLabel(record.device)}
+                  </span>
+                </div>
+              </td>
 
-                      {/* Device: icon + short label; full UA in title */}
-                      <td className="py-4">
-                        <div className="flex items-center gap-2">
-                          {getDeviceIcon(record.device)}
-                          <span className="text-sm text-slate-300 whitespace-nowrap" title={record.device}>
-                            {getDeviceLabel(record.device)}
-                          </span>
-                        </div>
-                      </td>
+              {/* Browser */}
+              <td className="py-4 pr-4 align-top">
+                <span className="text-sm" title={record.browser}>
+                  {record.browser}
+                </span>
+              </td>
 
-                      {/* Browser (truncate) */}
-                      <td className="py-4">
-                        <span className="text-sm truncate max-w-[160px] inline-block" title={record.browser}>
-                          {record.browser}
-                        </span>
-                      </td>
+              {/* Login Time */}
+              <td className="py-4 pr-4 align-top text-sm">
+                {formatDate(record.loginTime)}
+              </td>
 
-                      {/* Login Time */}
-                      <td className="py-4 text-sm">
-                        {formatDate(record.loginTime)}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-4">
-                        {record.status === "success" ? (
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400">
-                            Success
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">
-                            Failed
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
+              {/* Status */}
+              <td className="py-4 pl-4 align-top">
+                {record.status === "success" ? (
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                    Success
+                  </span>
                 ) : (
-                  <tr>
-                    <td colSpan="6" className="py-8 text-center text-slate-500">
-                      No login records found
-                    </td>
-                  </tr>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">
+                    Failed
+                  </span>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </Layout>
-  );
-};
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="6" className="py-8 text-center text-slate-500">
+              No login records found
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
 export default LoginMonitoring;
