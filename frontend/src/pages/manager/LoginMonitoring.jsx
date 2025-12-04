@@ -41,11 +41,20 @@ const LoginMonitoring = () => {
   };
 
   const getDeviceIcon = (device) => {
-    if (device.includes('Phone') || device.includes('iPhone') || device.includes('Android')) {
+    const d = device.toLowerCase();
+  
+    if (
+      d.includes("mobile") ||
+      d.includes("android") ||
+      d.includes("iphone") ||
+      d.includes("ipad")
+    ) {
       return <FiSmartphone className="w-5 h-5" />;
     }
+  
     return <FiMonitor className="w-5 h-5" />;
   };
+  
 
   if (isLoading) {
     return (
