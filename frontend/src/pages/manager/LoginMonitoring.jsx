@@ -1,60 +1,72 @@
-import { useEffect, useState } from 'react';
-import { FiMonitor, FiSmartphone, FiGlobe, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
-import Layout from '../../components/layout/Layout';
-import Loading from '../../components/common/Loading';
-import api from '../../utils/api';
+import { useEffect, useState } from "react";
+import {
+  FiMonitor,
+  FiSmartphone,
+  FiGlobe,
+  FiCheckCircle,
+  FiXCircle,
+  FiClock,
+} from "react-icons/fi";
+import Layout from "../../components/layout/Layout";
+import Loading from "../../components/common/Loading";
+import api from "../../utils/api";
 
 const LoginMonitoring = () => {
   const [loginHistory, setLoginHistory] = useState([]);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
 
   useEffect(() => {
     fetchLoginHistory();
+    // eslint-disable-next-line
   }, [filter]);
 
   const fetchLoginHistory = async () => {
     setIsLoading(true);
     try {
       const params = {};
-      if (filter !== 'all') params.status = filter;
-      
-      const response = await api.get('/auth/login-history', { params });
-      setLoginHistory(response.data.data);
-      setStats(response.data.stats);
+      if (filter !== "all") params.status = filter;
+
+      const response = await api.get("/auth/login-history", { params });
+      setLoginHistory(response.data.data || []);
+      setStats(response.data.stats || null);
     } catch (error) {
-      console.error('Error fetching login history:', error);
+      console.error("Error fetching login history:", error);
     }
     setIsLoading(false);
   };
 
   const formatDate = (date) => {
-    return new Date(date).toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
+    return new Date(date).toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
-  const getDeviceIcon = (device) => {
-    const d = device.toLowerCase();
-  
-    if (
-      d.includes("mobile") ||
-      d.includes("android") ||
-      d.includes("iphone") ||
-      d.includes("ipad")
-    ) {
+  const getDeviceIcon = (device = "") => {
+    const d = String(device).toLowerCase();
+
+    if (d.includes("mobile") || d.includes("android") || d.includes("iphone") || d.includes("ipad")) {
       return <FiSmartphone className="w-5 h-5" />;
     }
-  
     return <FiMonitor className="w-5 h-5" />;
   };
-  
+
+  const getDeviceLabel = (device = "") => {
+    const d = String(device).toLowerCase();
+    if (d.includes("iphone")) return "iPhone";
+    if (d.includes("ipad")) return "iPad";
+    if (d.includes("android")) return "Android";
+    if (d.includes("mobile")) return "Mobile";
+    if (d.includes("mac")) return "Mac";
+    if (d.includes("windows")) return "Windows PC";
+    return device || "Unknown";
+  };
 
   if (isLoading) {
     return (
@@ -73,7 +85,7 @@ const LoginMonitoring = () => {
           <p className="text-slate-400 mt-1">Track all user login activities</p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/30">
@@ -117,42 +129,50 @@ const LoginMonitoring = () => {
         {/* Filter */}
         <div className="flex gap-2">
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => setFilter("all")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              filter === "all" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
             All
           </button>
           <button
-            onClick={() => setFilter('success')}
+            onClick={() => setFilter("success")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'success' ? 'bg-emerald-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              filter === "success" ? "bg-emerald-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
             Successful
           </button>
           <button
-            onClick={() => setFilter('failed')}
+            onClick={() => setFilter("failed")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'failed' ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              filter === "failed" ? "bg-red-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
           >
             Failed
           </button>
         </div>
 
-        {/* Login History Table */}
+        {/* Table */}
         <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-          <h3 className="font-semibold text-white mb-4">
-            Login History ({loginHistory.length} records)
-          </h3>
+          <h3 className="font-semibold text-white mb-4">Login History ({loginHistory.length} records)</h3>
 
           <div className="overflow-x-auto">
-            <table className="w-full">
+            {/* table-fixed + colgroup to enforce consistent column widths */}
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "24%" }} />
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "18%" }} />
+                <col style={{ width: "10%" }} />
+              </colgroup>
+
               <thead>
                 <tr className="text-left text-slate-400 text-sm border-b border-slate-700">
-                  <th className="pb-3 font-medium">User</th>
+                  <th className="pb-3 font-medium pl-2">User</th>
                   <th className="pb-3 font-medium">IP Address</th>
                   <th className="pb-3 font-medium">Device</th>
                   <th className="pb-3 font-medium">Browser</th>
@@ -160,37 +180,59 @@ const LoginMonitoring = () => {
                   <th className="pb-3 font-medium">Status</th>
                 </tr>
               </thead>
+
               <tbody className="text-slate-300">
                 {loginHistory.length > 0 ? (
                   loginHistory.map((record, index) => (
                     <tr key={index} className="border-b border-slate-700/50 last:border-0">
-                      <td className="py-4">
+                      {/* User */}
+                      <td className="py-4 pl-2">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold text-sm">
-                            {record.userId?.name?.charAt(0) || '?'}
+                          <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-semibold text-sm shrink-0">
+                            {record.userId?.name?.charAt(0) || "?"}
                           </div>
-                          <div>
-                            <p className="font-medium text-white">{record.userId?.name || 'Unknown'}</p>
-                            <p className="text-xs text-slate-500">{record.userId?.email || ''}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-white truncate max-w-[220px]">{record.userId?.name || "Unknown"}</p>
+                            <p className="text-xs text-slate-500 truncate max-w-[220px]">{record.userId?.email || ""}</p>
                           </div>
                         </div>
                       </td>
+
+                      {/* IP Address (truncate if too long, full on hover) */}
                       <td className="py-4">
                         <div className="flex items-center gap-2">
-                          <FiGlobe className="w-4 h-4 text-slate-500" />
-                          <span className="font-mono text-sm">{record.ipAddress}</span>
+                          <FiGlobe className="w-4 h-4 text-slate-500 shrink-0" />
+                          <span className="font-mono text-sm truncate max-w-[300px]" title={record.ipAddress}>
+                            {record.ipAddress}
+                          </span>
                         </div>
                       </td>
+
+                      {/* Device: icon + short label; full UA in title */}
                       <td className="py-4">
                         <div className="flex items-center gap-2">
                           {getDeviceIcon(record.device)}
-                          <span>{record.device}</span>
+                          <span className="text-sm text-slate-300 whitespace-nowrap" title={record.device}>
+                            {getDeviceLabel(record.device)}
+                          </span>
                         </div>
                       </td>
-                      <td className="py-4">{record.browser}</td>
-                      <td className="py-4 text-sm">{formatDate(record.loginTime)}</td>
+
+                      {/* Browser (truncate) */}
                       <td className="py-4">
-                        {record.status === 'success' ? (
+                        <span className="text-sm truncate max-w-[160px] inline-block" title={record.browser}>
+                          {record.browser}
+                        </span>
+                      </td>
+
+                      {/* Login Time */}
+                      <td className="py-4 text-sm">
+                        {formatDate(record.loginTime)}
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-4">
+                        {record.status === "success" ? (
                           <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400">
                             Success
                           </span>
